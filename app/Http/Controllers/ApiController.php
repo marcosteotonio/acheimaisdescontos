@@ -37,7 +37,7 @@ use laravel\pagseguro\Credentials\Credentials;
 use laravel\pagseguro\Transaction\Transaction;
 
 class ApiController extends Controller
-{    
+{
     // INICIO - AUTENTICACAO E REGISTRO
 
     public function login(Request $r)
@@ -59,7 +59,7 @@ class ApiController extends Controller
 
             $e = User::where('email', $r->email)->first();
             if (isset($e)){
-                
+
                 $e->name = $r->name;
                 $e->facebook_id = $r->id;
 
@@ -90,16 +90,16 @@ class ApiController extends Controller
             }
         }
 	}
-    
+
     public function registro(Request $r)
     {
         $validator = Validator::make(Input::all(), User::$rules, User::$messages);
     	if ($validator->fails()) {
 	        $messages = $validator->messages();
             return $messages;
-        }else{			
+        }else{
 
-            $u = 
+            $u =
             User::create([
                 'name' => $r->name,
                 'email' => $r->email,
@@ -107,13 +107,13 @@ class ApiController extends Controller
                 'contato' => $r->contato,
                 'sexo' => $r->sexo,
                 'nascimento' => $r->nascimento,
-                'tipo' => '1',		
+                'tipo' => '1',
                 'categorias' => ''
             ]);
 
 			return $u;
         }
-    }    
+    }
 
     public function recuperar_senha(Request $r){
 
@@ -124,15 +124,15 @@ class ApiController extends Controller
             return [
                 'erro' => 'Não foi encontrado um usuário com o email informado. Por favor, tente novamente.'
             ];
-            
+
         }else{
-            
+
             $u->remember_token = md5(uniqid(""));
             $u->save();
-            
-            $link = getenv('APP_URL').'definir-senha/'.$u->email.'/'.$u->remember_token;            
+
+            $link = getenv('APP_URL').'definir-senha/'.$u->email.'/'.$u->remember_token;
             Session::flash('email', $u->email);
-            
+
             Mail::send('emails.recuperar_senha', ['nome' => $u->name, 'link' => $link], function ($message)
             {
                 $message->from(getenv('MAIL_USERNAME'), getenv('APP_NAME'));
@@ -142,10 +142,10 @@ class ApiController extends Controller
 
             return [
                 'sucesso' => 'Verifque sua caixa de entrada para gerar sua nova senha.'
-            ];            
+            ];
         }
 
-    }   
+    }
 
     // FIM - AUTENTICACAO E REGISTRO
 
@@ -164,7 +164,7 @@ class ApiController extends Controller
                         ->groupBy('cidade')
                         ->select('cidade')
                         ->get();
-        
+
         $categorias = CategoriaEmpresa::where('destacar',1)->get();
 
         $itens_carrinho = Carrinho::where('guid', $r->guid)->count();
@@ -180,7 +180,7 @@ class ApiController extends Controller
                         ->paginate(30);
 
         $hoje = date('Y-m-d');
-        $hora = date('H:i:s');			
+        $hora = date('H:i:s');
         $dia_semana = date('w', strtotime($hoje));
         foreach($lojas as $l){
 
@@ -189,22 +189,22 @@ class ApiController extends Controller
                                 ->where('inicio','<=',$hora)
                                 ->where('fim','>=',$hora)
                                 ->count();
-            
+
             $l->aberto = $horarios > 0;
         }
-                
+
         $query_ofertas = Produto::join('users as u','u.id','=','produtos.user_id')
-                            ->where('cupom', 1) 
-                            ->where('u.ativo',1)                            
+                            ->where('cupom', 1)
+                            ->where('u.ativo',1)
                             ->where('adicional',0)
                             ->where('produtos.ativo',1);
-        
+
         if (isset($r->cidade)) {
             $query_ofertas = $query_ofertas->where('u.cidade', $r->cidade);
         }
 
         $query_ofertas = $query_ofertas->orWhere('vip',1)
-                                        ->where('u.ativo',1)                            
+                                        ->where('u.ativo',1)
                                         ->where('adicional',0)
                                         ->where('produtos.ativo',1);
 
@@ -216,13 +216,13 @@ class ApiController extends Controller
 							->orderBy('produtos.nome')
                             ->select('produtos.*','u.name as username')
                             ->paginate(30);
-        
+
         $banners = UserGaleria::join('users as u','u.id','=','users_galerias.user_id')
                                 ->where('u.tipo',null)
                                 ->select('users_galerias.*')
-                                ->get();        
+                                ->get();
 
-        $arr = [ 
+        $arr = [
             'lojas' => $lojas->items(),
             'ofertas' => $ofertas->items(),
             'banners' => $banners,
@@ -242,7 +242,7 @@ class ApiController extends Controller
         $categorias = CategoriaEmpresa::where('destacar',1)->get();
 
         if ($r->ordem == 0) { //alfabetica
-            
+
             $query_lojas = User::where('tipo',0)
                         ->where('ativo',1)
                         ->orderBy('name');
@@ -258,13 +258,13 @@ class ApiController extends Controller
             $hora = date('H:i:s');
             $dia_semana = date('w', strtotime($hoje));
             foreach($lojas as $l){
-                            
+
                 $horarios = Horario::where('user_id', $l->id)
                                     ->where('dia', $dia_semana)
                                     ->where('inicio','<=',$hora)
                                     ->where('fim','>=',$hora)
-                                    ->count();                                                                
-                
+                                    ->count();
+
                 $l->aberto = $horarios > 0;
             }
 
@@ -279,11 +279,11 @@ class ApiController extends Controller
             DB::select(
                 DB::raw(
                     'SELECT id, name, foto, latitude, longitude, destaque, nota,
-                    (6371 * acos( cos( radians('.$latitude.') ) 
-                    * cos( radians( latitude ) ) 
-                    * cos( radians( longitude ) - radians('.$longitude.') ) 
-                    + sin( radians('.$latitude.') ) 
-                    * sin( radians( latitude ) ) ) ) AS distancia 
+                    (6371 * acos( cos( radians('.$latitude.') )
+                    * cos( radians( latitude ) )
+                    * cos( radians( longitude ) - radians('.$longitude.') )
+                    + sin( radians('.$latitude.') )
+                    * sin( radians( latitude ) ) ) ) AS distancia
                     FROM users
                     WHERE tipo = 0 AND
                     '.$cmd.'
@@ -296,31 +296,31 @@ class ApiController extends Controller
             $hora = date('H:i:s');
             $dia_semana = date('w', strtotime($hoje));
             foreach($lojas as $l){
-                            
+
                 $horarios = Horario::where('user_id', $l->id)
                                     ->where('dia', $dia_semana)
                                     ->where('inicio','<=',$hora)
                                     ->where('fim','>=',$hora)
-                                    ->count();                                                                
-                
+                                    ->count();
+
                 $l->aberto = $horarios > 0;
             }
 
             //dd($lojas);
         }
-                
+
         $query_ofertas = Produto::join('users as u','u.id','=','produtos.user_id')
-                            ->where('cupom', 1) 
-                            ->where('u.ativo',1)                            
+                            ->where('cupom', 1)
+                            ->where('u.ativo',1)
                             ->where('adicional',0)
                             ->where('produtos.ativo',1);
-        
+
         if (isset($r->cidade)) {
             $query_ofertas = $query_ofertas->where('u.cidade', $r->cidade);
         }
 
         $query_ofertas = $query_ofertas->orWhere('vip',1)
-                                        ->where('u.ativo',1)                            
+                                        ->where('u.ativo',1)
                                         ->where('adicional',0)
                                         ->where('produtos.ativo',1);
 
@@ -338,7 +338,7 @@ class ApiController extends Controller
             ->select('users_galerias.*')
             ->get();
 
-        $arr = [ 
+        $arr = [
             'lojas' => $lojas,
             'ofertas' => $ofertas,
             'banners' => $banners,
@@ -347,21 +347,21 @@ class ApiController extends Controller
 
         return response()->json($arr);
     }
-    
-	
+
+
     public function obter_mais_ofertas(){
 
         $ofertas = Produto::join('users as u','u.id','=','produtos.user_id')
-                            ->where('cupom', 1) 
-                            ->where('u.ativo',1)                            
+                            ->where('cupom', 1)
+                            ->where('u.ativo',1)
                             ->where('adicional',0)
                             ->where('produtos.ativo',1)
-                
+
                             ->orWhere('vip',1)
-                            ->where('u.ativo',1)                            
+                            ->where('u.ativo',1)
                             ->where('adicional',0)
                             ->where('produtos.ativo',1)
-        
+
                             ->orderBy('produtos.cupom','desc')
 							->orderBy('produtos.nome')
                             ->select('produtos.*','u.name as username')
@@ -374,7 +374,7 @@ class ApiController extends Controller
         //                 ->where('adicional',0)
         //                 ->where('produtos.ativo',1)
         //                 ->orderBy('produtos.cupom','desc')
-        //                 ->orderBy('produtos.nome')                            
+        //                 ->orderBy('produtos.nome')
         //                 ->select('produtos.*','u.name as username')
         //                 ->paginate(30);
 
@@ -385,14 +385,14 @@ class ApiController extends Controller
     public function obter_mais_ofertas_post( Request $r ){
 
         $ofertas = Produto::join('users as u','u.id','=','produtos.user_id')
-                            ->where('cupom', 1) 
-                            ->where('u.ativo',1)                            
+                            ->where('cupom', 1)
+                            ->where('u.ativo',1)
                             ->where('adicional',0)
                             ->where('produtos.ativo',1)
                             ->where('u.cidade',$r->cidade)
 
                             ->orWhere('vip',1)
-                            ->where('u.ativo',1)                            
+                            ->where('u.ativo',1)
                             ->where('adicional',0)
                             ->where('produtos.ativo',1)
                             ->where('u.cidade',$r->cidade)
@@ -409,13 +409,13 @@ class ApiController extends Controller
         //                 ->where('u.cidade',$r->cidade)
         //                 ->where('produtos.ativo',1)
         //                 ->orderBy('produtos.cupom','desc')
-        //                 ->orderBy('produtos.nome')                            
+        //                 ->orderBy('produtos.nome')
         //                 ->select('produtos.*','u.name as username')
         //                 ->paginate(30);
 
         return $ofertas->items();
     }
-  
+
     public function obter_mais_lojas(){
         $lojas = User::where('tipo',0)
                     ->where('ativo',1)
@@ -424,7 +424,7 @@ class ApiController extends Controller
                     ->paginate(30);
 
         $hoje = date('Y-m-d');
-        $hora = date('H:i:s');			
+        $hora = date('H:i:s');
         $dia_semana = date('w', strtotime($hoje));
         foreach($lojas as $l){
 
@@ -433,12 +433,12 @@ class ApiController extends Controller
                                 ->where('inicio','<=',$hora)
                                 ->where('fim','>=',$hora)
                                 ->count();
-            
+
             $l->aberto = $horarios > 0;
         }
 			return $lojas->items();
     }
-    
+
     public function obter_mais_lojas_post( Request $r ){
         $lojas = User::where('tipo',0)
                     ->where('ativo',1)
@@ -448,7 +448,7 @@ class ApiController extends Controller
                     ->paginate(30);
 
         $hoje = date('Y-m-d');
-        $hora = date('H:i:s');			
+        $hora = date('H:i:s');
         $dia_semana = date('w', strtotime($hoje));
         foreach($lojas as $l){
 
@@ -457,17 +457,17 @@ class ApiController extends Controller
                                 ->where('inicio','<=',$hora)
                                 ->where('fim','>=',$hora)
                                 ->count();
-            
+
             $l->aberto = $horarios > 0;
         }
 			return $lojas->items();
 	}
 
     public function index_busca($categoria_id, $tipo)
-    {                
+    {
 
         if ($tipo == 0) { //lojas
-            
+
             $lojas = User::where('tipo',0)
                         ->where('ativo',1)
                         ->where('categorias', 'LIKE', '%,'.$categoria_id.',%')
@@ -480,13 +480,13 @@ class ApiController extends Controller
             $hora = date('H:i:s');
             $dia_semana = date('w', strtotime($hoje));
             foreach($lojas as $l){
-                            
+
                 $horarios = Horario::where('user_id', $l->id)
                                     ->where('dia', $dia_semana)
                                     ->where('inicio','<=',$hora)
                                     ->where('fim','>=',$hora)
-                                    ->count();                                                                
-                
+                                    ->count();
+
                 $l->aberto = $horarios > 0;
             }
 
@@ -500,21 +500,21 @@ class ApiController extends Controller
                             ->where('produtos.ativo',1)
                             ->where('categoria_id', $categoria_id)
                             ->orderBy('produtos.cupom','desc')
-							->orderBy('produtos.nome')                            
+							->orderBy('produtos.nome')
                             ->select('produtos.*','u.name as username')
                             ->get();
 
             return ['ofertas' => $ofertas];
-        }        
-                
+        }
+
         return null;
     }
 
     public function index_busca_post( Request $r )
-    {                
+    {
 
         if ($r->tipo == 0) { //lojas
-            
+
             $lojas = User::where('tipo',0)
                         ->where('ativo',1)
                         ->where('cidade', $r->cidade)
@@ -528,13 +528,13 @@ class ApiController extends Controller
             $hora = date('H:i:s');
             $dia_semana = date('w', strtotime($hoje));
             foreach($lojas as $l){
-                            
+
                 $horarios = Horario::where('user_id', $l->id)
                                     ->where('dia', $dia_semana)
                                     ->where('inicio','<=',$hora)
                                     ->where('fim','>=',$hora)
-                                    ->count();                                                                
-                
+                                    ->count();
+
                 $l->aberto = $horarios > 0;
             }
 
@@ -549,13 +549,13 @@ class ApiController extends Controller
                             ->where('produtos.ativo',1)
                             ->where('categoria_id', $r->categoria_id)
                             ->orderBy('produtos.cupom','desc')
-							->orderBy('produtos.nome')                            
+							->orderBy('produtos.nome')
                             ->select('produtos.*','u.name as username')
                             ->get();
 
             return ['ofertas' => $ofertas];
-        }        
-                
+        }
+
         return null;
     }
 
@@ -566,35 +566,35 @@ class ApiController extends Controller
                     ->where('tipo',0)
                     ->orderBy('name')
                     ->select('id','name','foto','latitude','longitude','destaque','nota')
-                    ->get();          
-                    
+                    ->get();
+
         $hoje = date('Y-m-d');
         $hora = date('H:i:s');
         $dia_semana = date('w', strtotime($hoje));
         foreach($lojas as $l){
-                        
+
             $horarios = Horario::where('user_id', $l->id)
                                 ->where('dia', $dia_semana)
                                 ->where('inicio','<=',$hora)
                                 ->where('fim','>=',$hora)
-                                ->count();                                                                
-            
+                                ->count();
+
             $l->aberto = $horarios > 0;
         }
-        
+
         $ofertas = Produto::join('users as u','u.id','=','produtos.user_id')
                             ->where('u.ativo',1)
                             ->where('adicional',0)
                             ->where('produtos.ativo',1)
                             ->where('produtos.nome','like','%'.$pesquisa.'%')
                             ->orderBy('produtos.cupom','desc')
-							->orderBy('produtos.nome')                            
+							->orderBy('produtos.nome')
                             ->select('produtos.*','u.name as username')
                             ->get();
-        
-        $arr = [ 
+
+        $arr = [
             'lojas' => $lojas,
-            'ofertas' => $ofertas            
+            'ofertas' => $ofertas
         ];
 
         return response()->json($arr);
@@ -608,22 +608,22 @@ class ApiController extends Controller
                     ->where('tipo',0)
                     ->orderBy('name')
                     ->select('id','name','foto','latitude','longitude','destaque','nota')
-                    ->get();          
-                    
+                    ->get();
+
         $hoje = date('Y-m-d');
         $hora = date('H:i:s');
         $dia_semana = date('w', strtotime($hoje));
         foreach($lojas as $l){
-                        
+
             $horarios = Horario::where('user_id', $l->id)
                                 ->where('dia', $dia_semana)
                                 ->where('inicio','<=',$hora)
                                 ->where('fim','>=',$hora)
-                                ->count();                                                                
-            
+                                ->count();
+
             $l->aberto = $horarios > 0;
         }
-        
+
         $ofertas = Produto::join('users as u','u.id','=','produtos.user_id')
                             ->where('u.ativo',1)
                             ->where('u.cidade',$r->cidade)
@@ -631,22 +631,22 @@ class ApiController extends Controller
                             ->where('produtos.ativo',1)
                             ->where('produtos.nome','like','%'.$r->pesquisa.'%')
                             ->orderBy('produtos.cupom','desc')
-							->orderBy('produtos.nome')                            
+							->orderBy('produtos.nome')
                             ->select('produtos.*','u.name as username')
                             ->get();
-        
-        $arr = [ 
+
+        $arr = [
             'lojas' => $lojas,
-            'ofertas' => $ofertas            
+            'ofertas' => $ofertas
         ];
 
         return response()->json($arr);
-    }    
+    }
 
     public function loja_ofertas($id, $user_id)
-    {   
-        $loja = User::find($id);        
-        
+    {
+        $loja = User::find($id);
+
         $loja->horarios = Horario::where('user_id', $id)->orderBy('dia')->orderBy('inicio')->get();
         $loja->avaliacoes = Avaliacao::join('users as u','u.id','=','avaliacoes.user_id')
                                     ->where('empresa_id', $id)
@@ -682,19 +682,19 @@ class ApiController extends Controller
 
         $banners = UserGaleria::where('user_id',$id)->get();
 
-        $arr = [ 
+        $arr = [
             'loja' => $loja,
             'ofertas' => $categorias,
             'banners' => $banners
         ];
 
         return response()->json($arr);
-    }    
+    }
 
     public function produto($id, $user_id)
     {
         $config = Config::first();
-        
+
         $produto = Produto::find($id);
         $produto->visualizacoes += 1;
         $produto->save();
@@ -759,7 +759,7 @@ class ApiController extends Controller
             $loja->favorito = 1;
             return $loja;
         }
-        
+
     }
 
     public function favoritar_produto(Request $r){
@@ -783,7 +783,7 @@ class ApiController extends Controller
             $produto->favorito = 1;
             return $produto;
         }
-        
+
     }
 
     public function avaliar_produto(Request $r){
@@ -820,13 +820,13 @@ class ApiController extends Controller
 
         $a->nota_ambiente = $r->nota_ambiente;
         $a->nota_qualidade = $r->nota_qualidade;
-        $a->nota_atendimento = $r->nota_atendimento;        
+        $a->nota_atendimento = $r->nota_atendimento;
         $a->save();
 
         //nota : (atendimento + qualidade + ambiente) / 3,
 
         $avaliacoes = Avaliacao::where('empresa_id', $r->empresa_id)->get();
-        
+
         $total_atendimento = 0;
         $total_qualidade = 0;
         $total_ambiente = 0;
@@ -864,7 +864,7 @@ class ApiController extends Controller
                     ->select('p.*')
                     ->get();
 
-        
+
         return [
             'lojas' => $f,
             'ofertas' => $p
@@ -872,23 +872,23 @@ class ApiController extends Controller
     }
 
     public function baixar_cupom(Request $r){
-        
-        $u = User::find( $r->user_id );                
+
+        $u = User::find( $r->user_id );
 
         if ( $r->vip == 1 ){
 
             if (isset($u) && isset($u->plano)){ // eh usuario vip
-            
+
                 if ( !isset($u->plano_expiracao) ) {
                     return ['erro' => '0', 'msg' => 'O seu Plano VIP ainda não está ativo.'];
                 }
 
-                if ( isset($u->plano_expiracao) && strtotime($u->plano_expiracao) < strtotime(date('Y-m-d')) ){  
-                    return ['erro' => '2', 'msg' => 'A validade do seu Plano VIP expirou, realize a renovação e tente novamente!'];                    
+                if ( isset($u->plano_expiracao) && strtotime($u->plano_expiracao) < strtotime(date('Y-m-d')) ){
+                    return ['erro' => '2', 'msg' => 'A validade do seu Plano VIP expirou, realize a renovação e tente novamente!'];
                 }
-                
+
             }else{
-                return ['erro' => '1', 'msg' => 'Para aproveitar os descontos desse cupom você precisa se registrar.'];                
+                return ['erro' => '1', 'msg' => 'Para aproveitar os descontos desse cupom você precisa se registrar.'];
             }
 
         }
@@ -897,7 +897,7 @@ class ApiController extends Controller
         $existe = null;
 
         if ( $r->vip == 1 ) {
-            
+
             $existe = Cupom::where('user_id', $r->user_id)
                             ->where('produto_id', $r->produto_id)
                             ->where('vip', 1)
@@ -912,8 +912,8 @@ class ApiController extends Controller
                             ->first();
         }
 
-        
-        if (isset($existe)) { 
+
+        if (isset($existe)) {
             return [
                 'erro' => '0', 'msg' => 'Você já baixou um cupom para esta oferta hoje.'
             ];
@@ -928,7 +928,7 @@ class ApiController extends Controller
         $c = new Cupom();
         $c->fill($r->all());
         $c->validado = 0;
-        $c->codigo = $codigo;        
+        $c->codigo = $codigo;
         $c->save();
 
         // $cupons = Cupom::join('produtos as p','p.id','=','cupons.produto_id')
@@ -956,7 +956,7 @@ class ApiController extends Controller
 
     public function remover_cupom(Request $r){
         Cupom::where('id',$r->id)->where('user_id', $r->user_id)->delete();
-        
+
         $cupons = Cupom::join('produtos as p','p.id','=','cupons.produto_id')
                         ->join('users as u','u.id','=','p.user_id')
                         ->where('cupons.user_id',$r->user_id)
@@ -985,7 +985,7 @@ class ApiController extends Controller
                                         ->orderBy('nome')
                                         ->groupBy('categorias.id')
                                         ->select('categorias.*')
-                                        ->get();            
+                                        ->get();
         }
 
         foreach($categorias_empresa as $e){
@@ -999,7 +999,7 @@ class ApiController extends Controller
                     u.valido = 1
                     group by c.id
                 ")
-            );                                    
+            );
         }
 
         return [
@@ -1012,7 +1012,7 @@ class ApiController extends Controller
     {
         if (isset($token) && $token != 'null') {
             User::where('token',$token)->update(['token' => null]);
-                
+
             $u = User::find($id);
             $u->token = $token;
             $u->save();
@@ -1051,9 +1051,9 @@ class ApiController extends Controller
 
         // if($r->foto != ''){
         //     $size = $r->foto ->getClientSize();
-        //     if($size > 50000){                
+        //     if($size > 50000){
         //         return ['erro', 'O tamanho da imagem não pode ser maior que 50kb, por favor redimensione sua imagem e tente novamente.'];
-        //         exit; 
+        //         exit;
         //     }
         // }
 
@@ -1130,7 +1130,7 @@ class ApiController extends Controller
     public function qtd_mensagens( $id ){
         $mensagens = Mensagem::join('users as u','u.id','=','mensagens.de')
                             ->where('para',$id)
-                            ->orderBy('created_at')                            
+                            ->orderBy('created_at')
                             ->count();
         return $mensagens;
     }
@@ -1144,22 +1144,22 @@ class ApiController extends Controller
 	        $messages = $validator->messages();
             return $messages;
         }else{
-                        
+
             $produto = Produto::find( $r->produto_id );
             $carrinho = Carrinho::join('produtos as p','p.id','=','carrinhos.produto_id')
                                 ->where('guid', $r->guid)
                                 ->select('p.*')
                                 ->first();
 
-            if ( isset($carrinho) && $carrinho->user_id != $produto->user_id ) { 
+            if ( isset($carrinho) && $carrinho->user_id != $produto->user_id ) {
                 // se os produtos nao forem da mesma loja, limpa carrinho e add o novo
                 $pd_carrinho = Carrinho::where('guid',$r->guid)->get();
                 foreach( $pd_carrinho as $pd ){
                     Adicional::where('carrinho_id', $pd->id)->delete();
                     $pd->delete();
-                }                
+                }
             }
-            
+
             $c = new Carrinho();
             $c->fill( $r->all() );
 
@@ -1171,7 +1171,7 @@ class ApiController extends Controller
                 if ($r->tamanho == 3) $vlr = $produto->vlr_tam3;
                 if ($r->tamanho == 4) $vlr = $produto->vlr_tam4;
                 if ($r->tamanho == 5) $vlr = $produto->vlr_tam5;
-            }                
+            }
 
             if ( $produto->promocao == 1 && $produto->desconto > 0 ) {
                 $c->valor_unitario = $vlr - (( $vlr * $produto->desconto) / 100);
@@ -1213,13 +1213,13 @@ class ApiController extends Controller
     }
 
     public function carrinho( Request $r ){
-        
+
         $empresa = null;
         $produtos = Carrinho::join('produtos as p','p.id','=','carrinhos.produto_id')
                             ->where('guid', $r->guid)
                             ->select('p.*','carrinhos.quantidade','carrinhos.valor_unitario','carrinhos.id as id','carrinhos.produto_id as produto_id')
                             ->get();
-        
+
         if (count($produtos) > 0) {
 
             $p = $produtos[0];
@@ -1234,17 +1234,17 @@ class ApiController extends Controller
         $guid = $c->guid;
         Adicional::where('carrinho_id', $c->id)->delete();
         $c->delete();
-        
+
         $produtos = Carrinho::join('produtos as p','p.id','=','carrinhos.produto_id')
                             ->where('guid', $guid)
                             ->select('p.*','carrinhos.quantidade','carrinhos.valor_unitario','carrinhos.id as id')
                             ->get();
-        
+
         return $produtos;
     }
 
     public function increment( Request $r ){
-        $c = Carrinho::find( $r->id );        
+        $c = Carrinho::find( $r->id );
         $produto = Produto::find( $c->produto_id );
 
         if ($produto->unidade == 0) {
@@ -1252,8 +1252,8 @@ class ApiController extends Controller
         }else if ($produto->unidade == 1) {
             $c->quantidade = $c->quantidade + 0.1;
         }
-        $c->save();    
-        
+        $c->save();
+
         $produtos = Carrinho::join('produtos as p','p.id','=','carrinhos.produto_id')
                             ->where('guid', $c->guid)
                             ->select('p.*','carrinhos.quantidade','carrinhos.valor_unitario','carrinhos.id as id','carrinhos.produto_id as produto_id')
@@ -1262,8 +1262,8 @@ class ApiController extends Controller
     }
 
     public function decrement( Request $r ){
-        $c = Carrinho::find( $r->id );         
-        
+        $c = Carrinho::find( $r->id );
+
         $produto = Produto::find( $c->produto_id );
 
         if ($produto->unidade == 0) {
@@ -1271,9 +1271,9 @@ class ApiController extends Controller
         }else if ($produto->unidade == 1) {
             $c->quantidade = $c->quantidade - 0.1;
         }
-                
-        $c->save();        
-        
+
+        $c->save();
+
         $produtos = Carrinho::join('produtos as p','p.id','=','carrinhos.produto_id')
                             ->where('guid', $c->guid)
                             ->select('p.*','carrinhos.quantidade','carrinhos.valor_unitario','carrinhos.id as id','carrinhos.produto_id as produto_id')
@@ -1285,12 +1285,12 @@ class ApiController extends Controller
 
     // INICIO - CHECKOUT
 
-    public function buscar_endereco( Request $r ){        
+    public function buscar_endereco( Request $r ){
         return OBTER_ENDERECO( $r->cep );
     }
 
     public function finalizar_pedido( Request $r ){
-        
+
         $dia_semana = date('w', strtotime(date('Y-m-d')));
         $horarios_entrega = Horario::where('entrega',1)->where('dia', $dia_semana)->orderBy('inicio')->get();
 
@@ -1302,7 +1302,7 @@ class ApiController extends Controller
 
         $produto_id = 0;
         $total = 0;
-        foreach( $produtos as $p ){            
+        foreach( $produtos as $p ){
             $total += ($p->valor_unitario * $p->quantidade);
             $produto_id = $p->produto_id;
         }
@@ -1320,18 +1320,18 @@ class ApiController extends Controller
             $cupom->validado = 1;
             $cupom->save();
         }
-        
+
         return ['pedidos' => $p, 'horarios' => $horarios_entrega];
-    } 
-    
-    public function finalizar_pedido_horario( Request $r ){                
+    }
+
+    public function finalizar_pedido_horario( Request $r ){
 
         $horario = Horario::find( $r->horario_entrega );
         $produtos = Carrinho::where('guid', $r->guid)->get();
 
         $produto_id = 0;
         $total = 0;
-        foreach( $produtos as $p ){            
+        foreach( $produtos as $p ){
             $total += ($p->valor_unitario * $p->quantidade);
             $produto_id = $p->produto_id;
         }
@@ -1342,7 +1342,7 @@ class ApiController extends Controller
         $p->fill($r->all());
         $p->loja_id = $produto->user_id;
         $p->total = $total;
-                
+
         if(isset($horario)) $p->horario_entrega = $horario->inicio;
 
         $p->save();
@@ -1352,9 +1352,9 @@ class ApiController extends Controller
             $cupom->validado = 1;
             $cupom->save();
         }
-        
+
         return $p;
-    } 
+    }
 
     public function aplicar_cupom_desconto( Request $r ){
         $cupom = Cupom::where('codigo', $r->cupom)
@@ -1370,10 +1370,10 @@ class ApiController extends Controller
                 $produto = Produto::find( $cupom->produto_id );
                 $desconto = ($produto->valor * $produto->desconto)/100;
 
-                return ['sucesso' => $desconto];    
+                return ['sucesso' => $desconto];
 
             }else{
-                return ['erro' => 'Cupom já foi utilizado!'];    
+                return ['erro' => 'Cupom já foi utilizado!'];
             }
         }else{
             return ['erro' => 'Cupom inválido!'];
@@ -1393,7 +1393,7 @@ class ApiController extends Controller
     }
 
     public function pedido( Request $r ){
-        
+
         $pedido = Pedido::find( $r->id );
         $carrinhos = Carrinho::join('produtos as p','p.id','=','carrinhos.produto_id')
                                 ->where('guid', $pedido->guid)
@@ -1407,7 +1407,7 @@ class ApiController extends Controller
         return $carrinhos;
     }
 
-    public function ultimo_pedido( Request $r ){        
+    public function ultimo_pedido( Request $r ){
         $pedido = Pedido::where('user_id', $r->id)->orderBy('created_at','desc')->first();
         if (isset($pedido)) {
             return $pedido;
@@ -1428,35 +1428,35 @@ class ApiController extends Controller
         return $horarios;
     }
 
-    public function consultar_pagamento( Request $r){           
-                                
+    public function consultar_pagamento( Request $r){
+
         User::where('plano_expiracao', '<', date('Y-m-d'))->update(['plano_expiracao' => null, 'codigo_pagamento' => null]);
 
         $u = User::find( $r->id );
 
         if (isset($u) && isset($u->plano)){ // eh usuario vip
-            
-            if ( isset($u->plano_expiracao) ){ 
+
+            if ( isset($u->plano_expiracao) ){
 
                 if ( strtotime($u->plano_expiracao) >= strtotime(date('Y-m-d')) ) { // o usuario esta dentro da validade
 
                     return $u;
 
                 }else{
-                    // plano vip do usuario venceu                    
-                    return ['erro' => '2', 'msg' => 'A validade do seu Plano VIP expirou, realize a renovação e tente novamente!'];            
+                    // plano vip do usuario venceu
+                    return ['erro' => '2', 'msg' => 'A validade do seu Plano VIP expirou, realize a renovação e tente novamente!'];
                 }
 
-            }else if (isset($u->codigo_pagamento)){ 
+            }else if (isset($u->codigo_pagamento)){
                 // pagamento ainda n foi confirmado
-                // checar status do pagamento                
+                // checar status do pagamento
 
                 //\laravel\pagseguro\Config\Config::set('use-sandbox', true);
                 $credentials = new Credentials(getenv('PAGSEGURO_TOKEN'), getenv('PAGSEGURO_EMAIL'));
                 $transaction = new Transaction($u->codigo_pagamento, $credentials, false);
                 $information = $transaction->getInformation();
 
-                // ler a variavel information 
+                // ler a variavel information
                 // se status pago add data de validade do plano
                 // criar um numero para o cartao do cliente
 
@@ -1467,22 +1467,22 @@ class ApiController extends Controller
                     }else if ($u->plano == 2) {
                         $u->plano_expiracao = date('Y-m-d',strtotime(date("Y-m-d", mktime()) . " + 365 day"));
                     }
-    
+
                     if (!isset($u->numero_cartao)){
-    
+
                         $numero_cartao = RAND_NUMERO_CARTAO();
                         $user = User::where('numero_cartao', $numero_cartao)->first();
-    
+
                         while(isset($user)){
                             $numero_cartao = RAND_NUMERO_CARTAO();
                             $user = User::where('numero_cartao', $numero_cartao)->first();
                         }
-    
+
                         $u->numero_cartao = $numero_cartao;
                     }
-    
+
                     $u->save();
-    
+
                     return $u;
 
                 }else{
@@ -1494,32 +1494,33 @@ class ApiController extends Controller
             }
 
         }else{
-            return ['erro' => '1', 'msg' => 'Para aproveitar os descontos desse cupom você precisa se registrar.'];            
-        }                                        
+            return ['erro' => '1', 'msg' => 'Para aproveitar os descontos desse cupom você precisa se registrar.'];
+        }
     }
 
-    public function notificacoes_pagseguro( Request $r ){        
+    public function notificacoes_pagseguro( Request $r ){
 
         $code = $r->notificationCode;
-        $url = 'https://ws.pagseguro.uol.com.br/v2/transactions/notifications/'.$code.'?email='.getenv('PAGSEGURO_EMAIL').'&token='.getenv('PAGSEGURO_TOKEN');        
-        
-        $curl = curl_init();        
+        $url = 'https://ws.pagseguro.uol.com.br/v2/transactions/notifications/'.$code.'?email='.getenv('PAGSEGURO_EMAIL').'&token='.getenv('PAGSEGURO_TOKEN');
+        //$url = 'https://ws.sandbox.pagseguro.uol.com.br/v2/transactions/notifications/'.$code.'?email='.getenv('PAGSEGURO_EMAIL').'&token='.getenv('PAGSEGURO_TOKEN');
+
+        $curl = curl_init();
         curl_setopt_array($curl, array(
             CURLOPT_RETURNTRANSFER => 1,
-            CURLOPT_URL => $url            
-        ));        
-        $resp = curl_exec($curl);        
+            CURLOPT_URL => $url
+        ));
+        $resp = curl_exec($curl);
         curl_close($curl);
 
-        $xml = simplexml_load_string($resp);        
-        
+        $xml = simplexml_load_string($resp);
+
         $user_id = $xml->items->item->id;
         $status = $xml->status;
-        $codigo_pagamento = $xml->code;        
+        $codigo_pagamento = $xml->code;
 
         $u = User::find($user_id);
         $u->codigo_pagamento = $codigo_pagamento;
-        
+
         if ( $status == 3 ) {
 
             if ($u->plano == 1) {
@@ -1539,17 +1540,18 @@ class ApiController extends Controller
                 }
 
                 $u->numero_cartao = $numero_cartao;
-            }            
+                $u->ativo = 1;
+            }
         }
 
-        $u->save();        
+        $u->save();
     }
-    
+
     // public function chave(){
     //     $u = User::first();
     //     $u->password = bcrypt('123456');
     //     $u->save();
-        
+
     //     return bcrypt('123456');
     // }
 }

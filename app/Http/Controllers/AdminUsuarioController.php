@@ -37,27 +37,41 @@ class AdminUsuarioController extends Controller
 
     public function insert(Request $r){
         $validator = Validator::make(Input::all(), User::$rules, User::$messages);
-        if ($validator->fails()) {            
+        if ($validator->fails()) {
             return Redirect::back()->withErrors($validator);
         }else{
             $c = new User();
             $c->fill($r->all());
             $c->tipo = 1;
-            $c->password = bcrypt('123456');
+            if($r->senha !=''){
+                $c->password = bcrypt($r->senha);
+            }
+
             //$c->remember_token = md5(uniqid(""));
 
-            // if ($r->plano == 1)
-            // {
-            //     $c->plano_expiracao = date()
-            // }
+            if ($r->plano == 1) {
+                $c->plano_expiracao = date('Y-m-d',strtotime(date("Y-m-d") . " + 180 day"));
+            }else if ($r->plano == 2) {
+                $c->plano_expiracao = date('Y-m-d',strtotime(date("Y-m-d") . " + 365 day"));
+            }
 
 
+
+            $numero_cartao = RAND_NUMERO_CARTAO();
+            $user = User::where('numero_cartao', $numero_cartao)->first();
+
+            while(isset($user)){
+                $numero_cartao = RAND_NUMERO_CARTAO();
+                $user = User::where('numero_cartao', $numero_cartao)->first();
+            }
+            $c->codigo_pagamento = 'CADASTRADO PELO ADMIN';
+            $c->numero_cartao = $numero_cartao;
             $c->save();
 
             // $link = getenv('APP_URL').'definir-senha/'.$c->email.'/'.$c->remember_token;
 
             // Session::flash('email', $c->email);
-            
+
             // Mail::send('emails.registro', ['nome' => $c->name, 'link' => $link], function ($message)
             // {
             //     $message->from(getenv('MAIL_USERNAME'), getenv('APP_NAME'));
@@ -68,7 +82,7 @@ class AdminUsuarioController extends Controller
             Session::flash('message', 'Usuário cadastrado com sucesso!');
             return redirect('/admin/usuarios');
         }
-    }    
+    }
 
     public function edit($id){
         $c = User::find($id);
@@ -80,13 +94,15 @@ class AdminUsuarioController extends Controller
         if ($validator->fails()) {
             return Redirect::back()->withErrors($validator);
         }else{
-            $u = User::find($id);            
+            $u = User::find($id);
             $pass = $u->password;
 
             $u->fill($r->all());
+            if($r->input('senha') != ''){
+                $u->password = bcrypt($r->input('senha'));
+            }
 
-            $u->password = $pass;
-            $u->save(); 
+            $u->save();
 
             Session::flash('message', 'Os dados do usuário foram alterados com sucesso!');
             return redirect('/admin/usuarios');
@@ -103,14 +119,14 @@ class AdminUsuarioController extends Controller
     {
         $usuarios = User::where('tipo',1)->get();
         foreach ($usuarios as $u) {
-            
+
             $cupons = Cupom::where('user_id', $u->id)->with('produto.empresa')->get();
 
             // if(count($cupons) > 0)
             // dd($cupons);
 
             foreach ($cupons as $c) {
-                
+
                 if (isset($c->produto) && isset($c->produto->empresa)) {
 
                     $ref = EmpresaUsuario::where('user_id',$u->id)->where('empresa_id',$c->produto->empresa->id)->first();

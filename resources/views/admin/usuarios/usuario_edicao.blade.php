@@ -73,6 +73,11 @@
                     </div>
                     </div>
 
+                     <div class="col-md-4 c-field u-mb-small">
+                        <label class="c-field__label" for="senha">Senha</label> 
+                        <input class="c-input" type="password" id="senha" name="senha"> 
+                    </div>
+
                     <div class="col-md-4 c-field u-mb-small">
                     <div class="c-field u-mb-small">
                         <label class="c-field__label" for="select2">Plano VIP</label>
